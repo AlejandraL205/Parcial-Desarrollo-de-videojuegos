@@ -1,10 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MortyMovement : MonoBehaviour
 {
-    // Velocidad de movimiento
-    public float moveSpeed = 5f; // Velocidad de movimiento del personaje
+    // Velocidad de movimiento del personaje
+    public float moveSpeed = 5f;
     private Rigidbody2D rb; // Referencia al componente Rigidbody2D
     private Vector2 movement; // Vector para almacenar la dirección de movimiento
 
@@ -14,10 +15,23 @@ public class MortyMovement : MonoBehaviour
     private float leftRotation = 270f;   // Rotación hacia la izquierda
     private float rightRotation = 90f;   // Rotación hacia la derecha
 
+    [Header("Gas Particles")]
+    public ParticleSystem gasParticles; // Referencia al sistema de partículas del gas
+
     void Start()
     {
-        // Obtener la referencia al Rigidbody2D del Player
+        // Obtener la referencia al Rigidbody2D del jugador
         rb = GetComponent<Rigidbody2D>();
+
+        // Asegúrate de que el gas no se reproduzca al iniciar el juego
+        if (gasParticles != null)
+        {
+            gasParticles.Stop();
+        }
+        else
+        {
+            Debug.LogError("No se ha asignado un sistema de partículas de gas en el Inspector.");
+        }
     }
 
     void Update()
@@ -25,12 +39,19 @@ public class MortyMovement : MonoBehaviour
         // Detectar el input del jugador
         movement.x = Input.GetAxisRaw("Horizontal"); // -1 para izquierda, 1 para derecha
         movement.y = Input.GetAxisRaw("Vertical");   // -1 para abajo, 1 para arriba
+        movement = movement.normalized; // Normalizar el movimiento para mantener la misma velocidad en diagonal
 
-        // Normalizar el movimiento para mantener la misma velocidad en diagonal
-        movement = movement.normalized;
+        RotateCharacter(); // Llamar a la función para rotar el personaje
 
-        // Llamar a la función para rotar el personaje
-        RotateCharacter();
+        // Activar y desactivar el gas con la tecla Espacio
+        if (Input.GetKeyDown(KeyCode.Space) && gasParticles != null)
+        {
+            gasParticles.Play(); // Iniciar el gas
+        }
+        else if (Input.GetKeyUp(KeyCode.Space) && gasParticles != null)
+        {
+            gasParticles.Stop(); // Detener el gas
+        }
     }
 
     void FixedUpdate()
