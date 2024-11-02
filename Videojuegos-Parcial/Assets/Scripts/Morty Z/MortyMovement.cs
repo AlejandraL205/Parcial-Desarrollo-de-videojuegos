@@ -37,10 +37,28 @@ public class MortyMovement : MonoBehaviour
     void Update()
     {
         // Detectar el input del jugador
-        movement.x = Input.GetAxisRaw("Horizontal"); // -1 para izquierda, 1 para derecha
-        movement.y = Input.GetAxisRaw("Vertical");   // -1 para abajo, 1 para arriba
-        movement = movement.normalized; // Normalizar el movimiento para mantener la misma velocidad en diagonal
+        movement.x = 0; // Reiniciar el movimiento horizontal
+        movement.y = 0; // Reiniciar el movimiento vertical
 
+        // Comprobar las teclas específicas para el movimiento
+        if (Input.GetKey(KeyCode.W)) // Mover arriba
+        {
+            movement.y = 1;
+        }
+        if (Input.GetKey(KeyCode.S)) // Mover abajo
+        {
+            movement.y = -1;
+        }
+        if (Input.GetKey(KeyCode.A)) // Mover izquierda
+        {
+            movement.x = -1;
+        }
+        if (Input.GetKey(KeyCode.D)) // Mover derecha
+        {
+            movement.x = 1;
+        }
+
+        movement.Normalize(); // Normalizar el movimiento para mantener la misma velocidad en diagonal
         RotateCharacter(); // Llamar a la función para rotar el personaje
 
         // Activar y desactivar el gas con la tecla Espacio
@@ -51,6 +69,16 @@ public class MortyMovement : MonoBehaviour
         else if (Input.GetKeyUp(KeyCode.Space) && gasParticles != null)
         {
             gasParticles.Stop(); // Detener el gas
+        }
+
+        // Interacciones
+        if (Input.GetKeyDown(KeyCode.E)) // Recoger Cerebro o Llave
+        {
+            CollectBrainOrKey();
+        }
+        if (Input.GetKeyDown(KeyCode.R)) // Recoger Pista
+        {
+            CollectClue();
         }
     }
 
@@ -79,5 +107,21 @@ public class MortyMovement : MonoBehaviour
         {
             transform.eulerAngles = new Vector3(0, 0, rightRotation);
         }
+    }
+
+    // Método para recoger un cerebro o llave
+    private void CollectBrainOrKey()
+    {
+        // Lógica para recoger cerebros o llaves
+        Debug.Log("Cerebro o llave recogida.");
+        // Aquí podrías implementar la lógica específica para cada tipo de objeto.
+    }
+
+    // Método para recoger una pista
+    private void CollectClue()
+    {
+        // Lógica para recoger una pista
+        Debug.Log("Pista recogida.");
+        // Implementar lógica específica para recoger pistas aquí.
     }
 }
