@@ -3,48 +3,57 @@ using UnityEngine;
 
 public class HunterController : MonoBehaviour
 {
-    public float walkSpeed = 2f; // Velocidad de caminar
-    public float idleTime = 3f; // Tiempo que el cazador permanecerá quieto
-    public float attackRadius = 5f; // Rango de ataque
-    public float detectionRadius = 10f; // Rango de detección
-    public float maxVerticalDistance = 3f; // Distancia máxima de movimiento vertical
-    public float maxHorizontalDistance = 3f; // Distancia máxima de movimiento horizontal
+    public float walkSpeed = 2f;               // Velocidad de caminar
+    public float idleTime = 3f;                // Tiempo en reposo
+    public float attackRadius = 5f;            // Rango de ataque
+    public float detectionRadius = 10f;        // Rango de detección
+    public float maxVerticalDistance = 3f;     // Máxima distancia de movimiento vertical
+    public float maxHorizontalDistance = 3f;   // Máxima distancia de movimiento horizontal
+    public bool moveVertically = false;        // Cambiar dirección de movimiento en el inspector
 
-    public bool moveVertically = false; // Opción para mover verticalmente
-
-    private Animator animator; // Componente Animator del cazador
-    private Transform player; // Referencia al jugador
-    private bool isWalking; // Estado de movimiento del cazador
-    private bool isAttacking; // Estado de ataque del cazador
-
-    private Vector3 originalPosition; // Posición original del cazador
+    private Animator animator;                 // Referencia al componente Animator
+    private Transform player;                  // Referencia al jugador
+    private bool isAttacking;                  // Estado de ataque
+    private Vector3 originalPosition;          // Posición inicial
+    private bool facingRight = true;           // Dirección de la mirada
+    private Coroutine currentRoutine;          // Almacena la rutina activa
 
     private void Start()
     {
-        animator = GetComponent<Animator>(); // Obtiene el componente Animator
-        player = GameObject.FindGameObjectWithTag("Player").transform; // Busca el jugador por tag
-        originalPosition = transform.position; // Guarda la posición original
-        StartCoroutine(WalkAndIdleRoutine()); // Inicia la rutina de caminar e idle
+        animator = GetComponent<Animator>();
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        originalPosition = transform.position;
+
+        // Empezamos con el ciclo de caminar y reposo
+        currentRoutine = StartCoroutine(WalkAndIdleRoutine());
     }
 
     private void Update()
     {
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position); // Calcula la distancia al jugador
+        // Detecta la distancia al jugador
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // Si el jugador está dentro del rango de ataque
         if (distanceToPlayer <= attackRadius)
         {
-            Debug.Log("Cazador en rango de ataque.");
+            // Si el jugador está en rango de ataque y no estamos atacando, iniciamos ataque
             if (!isAttacking)
             {
-                StartAttacking(); // Inicia el ataque
+                StartAttacking();
             }
         }
-        else if (distanceToPlayer <= detectionRadius) // Si el jugador está dentro del rango de detección
+        else if (distanceToPlayer <= detectionRadius && !isAttacking)
         {
-            Debug.Log("Cazador en rango de detección.");
-            StopAllCoroutines(); // Detiene cualquier movimiento en curso
-            StartCoroutine(PursuePlayer()); // Persigue al jugador
+            // Si el jugador está en el rango de detección pero fuera de ataque, lo perseguimos
+            if (currentRoutine != null)
+            {
+                StopCoroutine(currentRoutine);
+            }
+            currentRoutine = StartCoroutine(PursuePlayer());
+        }
+        else if (!isAttacking && currentRoutine == null)
+        {
+            // Si el jugador no está cerca y no estamos atacando, retomamos la rutina de caminar/reposo
+            currentRoutine = StartCoroutine(WalkAndIdleRoutine());
         }
     }
 
@@ -52,138 +61,140 @@ public class HunterController : MonoBehaviour
     {
         while (true)
         {
-            if (!isAttacking)
-            {
-                StartWalking(); // Inicia el movimiento
-                yield return new WaitForSeconds(idleTime); // Espera el tiempo de idle
-                StopWalking(); // Detiene el movimiento
-                yield return new WaitForSeconds(idleTime); // Espera antes de comenzar de nuevo
-            }
-            else
-            {
-                yield return null; // Esperar un frame si está atacando
-            }
+            StartWalking();  // Empieza a caminar
+            yield return new WaitForSeconds(idleTime);
+            StopWalking();   // Pausa para reposar
+            yield return new WaitForSeconds(idleTime);
         }
     }
 
     private void StartWalking()
     {
-        isWalking = true; // Marca como que está caminando
-        animator.SetBool("isWalking", true); // Cambia la animación a caminar
-        Debug.Log("Cazador comenzando a caminar.");
+        animator.SetBool("isWalking", true);
+        Debug.Log("Cazador caminando");
 
-        // Iniciar movimiento en la dirección especificada
+        // Inicia el movimiento en dirección vertical u horizontal
         if (moveVertically)
-        {
-            StartCoroutine(MoveVertically());
-        }
+            currentRoutine = StartCoroutine(MoveVertically());
         else
-        {
-            StartCoroutine(MoveHorizontally());
-        }
+            currentRoutine = StartCoroutine(MoveHorizontally());
     }
 
     private void StopWalking()
     {
-        isWalking = false; // Marca como que ha dejado de caminar
-        animator.SetBool("isWalking", false); // Cambia la animación a idle
-        Debug.Log("Cazador detenido.");
+        animator.SetBool("isWalking", false);
+        Debug.Log("Cazador detenido");
     }
 
     private IEnumerator MoveVertically()
     {
-        // Camina hacia arriba
         while (transform.position.y < originalPosition.y + maxVerticalDistance)
         {
             transform.position += Vector3.up * walkSpeed * Time.deltaTime;
-            transform.rotation = Quaternion.Euler(0, 0, 0); // Mirar hacia arriba
+            if (!facingRight) Flip(); // Voltea si es necesario
             yield return null;
         }
 
-        // Reposo en la posición superior
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
-        // Regresa hacia abajo
         while (transform.position.y > originalPosition.y)
         {
             transform.position -= Vector3.up * walkSpeed * Time.deltaTime;
-            transform.rotation = Quaternion.Euler(0, 180, 0); // Mirar hacia abajo
+            if (facingRight) Flip();
             yield return null;
         }
 
-        // Reposo en la posición original
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
-        StartWalking(); // Reinicia el ciclo
+        StartWalking();
     }
 
     private IEnumerator MoveHorizontally()
     {
-        // Camina hacia la derecha
         while (transform.position.x < originalPosition.x + maxHorizontalDistance)
         {
             transform.position += Vector3.right * walkSpeed * Time.deltaTime;
-            transform.rotation = Quaternion.Euler(0, 90, 0); // Mirar hacia la derecha
+            if (!facingRight) Flip(); // Voltea si es necesario
             yield return null;
         }
 
-        // Reposo en la posición derecha
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
-        // Regresa hacia la izquierda
         while (transform.position.x > originalPosition.x)
         {
             transform.position -= Vector3.right * walkSpeed * Time.deltaTime;
-            transform.rotation = Quaternion.Euler(0, -90, 0); // Mirar hacia la izquierda
+            if (facingRight) Flip();
             yield return null;
         }
 
-        // Reposo en la posición original
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
-        StartWalking(); // Reinicia el ciclo
+        StartWalking();
     }
 
     private IEnumerator PursuePlayer()
     {
-        while (Vector3.Distance(transform.position, player.position) <= detectionRadius)
+        animator.SetBool("isWalking", true);
+        Debug.Log("Cazador persiguiendo al jugador");
+
+        while (Vector3.Distance(transform.position, player.position) <= detectionRadius && !isAttacking)
         {
-            Vector3 direction = (player.position - transform.position).normalized; // Dirección hacia el jugador
-            transform.position += direction * walkSpeed * Time.deltaTime; // Mueve al cazador hacia el jugador
+            Vector3 direction = (player.position - transform.position).normalized;
+            transform.position += direction * walkSpeed * Time.deltaTime;
 
-            // Ajusta la rotación para mirar hacia el jugador
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, angle);
+            if ((direction.x > 0 && !facingRight) || (direction.x < 0 && facingRight))
+                Flip(); // Voltea hacia el jugador si es necesario
 
-            Debug.Log("Cazador persiguiendo al jugador.");
             yield return null;
         }
 
-        // Vuelve a la rutina de caminar e idle
-        StartCoroutine(WalkAndIdleRoutine());
+        animator.SetBool("isWalking", false);
+        Debug.Log("Cazador perdiendo de vista al jugador");
+
+        currentRoutine = StartCoroutine(WalkAndIdleRoutine());
     }
 
     private void StartAttacking()
     {
-        isAttacking = true; // Marca como que está atacando
-        StopWalking(); // Detiene el movimiento
-        animator.SetTrigger("Attack"); // Cambia a la animación de ataque
-        Debug.Log("Cazador comenzando a atacar.");
+        isAttacking = true;
+        animator.SetTrigger("Attack");
+        Debug.Log("Cazador atacando al jugador");
     }
 
     private void StopAttacking()
     {
-        isAttacking = false; // Marca como que ha dejado de atacar
-        StartCoroutine(WalkAndIdleRoutine()); // Regresa a la rutina de caminar e idle
+        isAttacking = false;
+        Debug.Log("Cazador termina ataque");
     }
 
-    // Método llamado al final de la animación de ataque
     public void OnAttackAnimationEnd()
     {
-        StopAttacking(); // Finaliza el ataque
+        StopAttacking();
+        if (currentRoutine != null)
+        {
+            StopCoroutine(currentRoutine);
+            currentRoutine = StartCoroutine(WalkAndIdleRoutine());
+        }
+    }
+
+    private void Flip()
+    {
+        facingRight = !facingRight;
+        Vector3 scale = transform.localScale;
+        scale.x *= -1;
+        transform.localScale = scale;
+        Debug.Log("Cazador voltea de dirección");
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            Debug.Log("Jugador detectado en área de visión del cazador");
+        }
     }
 }
