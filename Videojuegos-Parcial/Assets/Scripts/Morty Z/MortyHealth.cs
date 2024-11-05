@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using UnityEngine.SceneManagement;
 
 public class MortyHealth : MonoBehaviour
 {
@@ -37,5 +38,6 @@ public class MortyHealth : MonoBehaviour
     private void Die()
     {
         Debug.Log("Morty ha muerto.");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
