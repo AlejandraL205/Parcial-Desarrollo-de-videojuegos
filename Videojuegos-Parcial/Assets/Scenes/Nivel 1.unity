@@ -991,7 +991,7 @@ Canvas:
   m_Enabled: 1
   serializedVersion: 3
   m_RenderMode: 1
-  m_Camera: {fileID: 0}
+  m_Camera: {fileID: 519420031}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -1694,6 +1694,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   gasParticles: {fileID: 1313153410}
+  gasSlider: {fileID: 0}
+  gasCooldown: 3
   health: {fileID: 1282195583}
   cerebroUI: {fileID: 826723035}
 --- !u!114 &1282195583
