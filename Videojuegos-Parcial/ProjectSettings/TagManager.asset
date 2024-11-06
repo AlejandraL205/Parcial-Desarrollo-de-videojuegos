@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Hunter
   - GasParticles
+  - Ground
   layers:
   - Default
   - TransparentFX

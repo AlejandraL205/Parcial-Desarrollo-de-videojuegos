@@ -3,20 +3,21 @@ using UnityEngine;
 
 public class HunterController : MonoBehaviour
 {
-    public float walkSpeed = 2f;               // Velocidad de caminar
-    public float idleTime = 3f;                // Tiempo en reposo
-    public float attackRadius = 5f;            // Rango de ataque
-    public float detectionRadius = 10f;        // Rango de detección
-    public float maxVerticalDistance = 3f;     // Máxima distancia de movimiento vertical
-    public float maxHorizontalDistance = 3f;   // Máxima distancia de movimiento horizontal
-    public bool moveVertically = false;        // Cambiar dirección de movimiento en el inspector
-
-    private Animator animator;                 // Referencia al componente Animator
-    private Transform player;                  // Referencia al jugador
-    private bool isAttacking;                  // Estado de ataque
-    private Vector3 originalPosition;          // Posición inicial
-    private bool facingRight = true;           // Dirección de la mirada
-    private Coroutine currentRoutine;          // Almacena la rutina activa
+    public int brainValue = 1;               // Valor de cerebros que el cazador da al ser derrotado
+    public float walkSpeed = 2f;             // Velocidad de caminar
+    public float idleTime = 3f;              // Tiempo en reposo
+    public float attackRadius = 5f;          // Rango de ataque
+    public float detectionRadius = 10f;      // Rango de detección
+    public bool moveVertically = false;      // Cambiar dirección de movimiento en el inspector
+    private float stunnedTime = 2f;          // Tiempo de aturdimiento
+    private float stunTimer = 0f;            // Temporizador de aturdimiento
+    private bool isStunned = false;          // Estado de aturdimiento
+    private bool isAttacking = false;        // Estado de ataque
+    private Animator animator;               // Referencia al componente Animator
+    private Transform player;                // Referencia al jugador
+    private Vector3 originalPosition;        // Posición original
+    private bool facingRight = true;         // Dirección de la mirada
+    private Coroutine currentRoutine;        // Almacena la rutina activa
 
     private void Start()
     {
@@ -24,36 +25,46 @@ public class HunterController : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player").transform;
         originalPosition = transform.position;
 
-        // Empezamos con el ciclo de caminar y reposo
+        // Comienza el ciclo de caminar y reposar
         currentRoutine = StartCoroutine(WalkAndIdleRoutine());
     }
 
     private void Update()
     {
-        // Detecta la distancia al jugador
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        // Si el cazador está aturdido, no puede moverse ni atacar
+        if (isStunned)
+        {
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                isStunned = false;
+                Debug.Log("Cazador ya no está aturdido.");
+            }
+        }
+        else
+        {
+            // Comportamiento normal cuando no está aturdido
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        if (distanceToPlayer <= attackRadius)
-        {
-            // Si el jugador está en rango de ataque y no estamos atacando, iniciamos ataque
-            if (!isAttacking)
+            if (distanceToPlayer <= attackRadius)
             {
-                StartAttacking();
+                if (!isAttacking)
+                {
+                    StartAttacking();
+                }
             }
-        }
-        else if (distanceToPlayer <= detectionRadius && !isAttacking)
-        {
-            // Si el jugador está en el rango de detección pero fuera de ataque, lo perseguimos
-            if (currentRoutine != null)
+            else if (distanceToPlayer <= detectionRadius && !isAttacking)
             {
-                StopCoroutine(currentRoutine);
+                if (currentRoutine != null)
+                {
+                    StopCoroutine(currentRoutine);
+                }
+                currentRoutine = StartCoroutine(PursuePlayer());
             }
-            currentRoutine = StartCoroutine(PursuePlayer());
-        }
-        else if (!isAttacking && currentRoutine == null)
-        {
-            // Si el jugador no está cerca y no estamos atacando, retomamos la rutina de caminar/reposo
-            currentRoutine = StartCoroutine(WalkAndIdleRoutine());
+            else if (!isAttacking && currentRoutine == null)
+            {
+                currentRoutine = StartCoroutine(WalkAndIdleRoutine());
+            }
         }
     }
 
@@ -61,9 +72,9 @@ public class HunterController : MonoBehaviour
     {
         while (true)
         {
-            StartWalking();  // Empieza a caminar
+            StartWalking();
             yield return new WaitForSeconds(idleTime);
-            StopWalking();   // Pausa para reposar
+            StopWalking();
             yield return new WaitForSeconds(idleTime);
         }
     }
@@ -73,7 +84,6 @@ public class HunterController : MonoBehaviour
         animator.SetBool("isWalking", true);
         Debug.Log("Cazador caminando");
 
-        // Inicia el movimiento en dirección vertical u horizontal
         if (moveVertically)
             currentRoutine = StartCoroutine(MoveVertically());
         else
@@ -88,13 +98,12 @@ public class HunterController : MonoBehaviour
 
     private IEnumerator MoveVertically()
     {
-        while (transform.position.y < originalPosition.y + maxVerticalDistance)
+        while (transform.position.y < originalPosition.y + 3f)
         {
             transform.position += Vector3.up * walkSpeed * Time.deltaTime;
-            if (!facingRight) Flip(); // Voltea si es necesario
+            if (!facingRight) Flip();
             yield return null;
         }
-
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
@@ -104,7 +113,6 @@ public class HunterController : MonoBehaviour
             if (facingRight) Flip();
             yield return null;
         }
-
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
@@ -113,13 +121,12 @@ public class HunterController : MonoBehaviour
 
     private IEnumerator MoveHorizontally()
     {
-        while (transform.position.x < originalPosition.x + maxHorizontalDistance)
+        while (transform.position.x < originalPosition.x + 3f)
         {
             transform.position += Vector3.right * walkSpeed * Time.deltaTime;
-            if (!facingRight) Flip(); // Voltea si es necesario
+            if (!facingRight) Flip();
             yield return null;
         }
-
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
@@ -129,7 +136,6 @@ public class HunterController : MonoBehaviour
             if (facingRight) Flip();
             yield return null;
         }
-
         StopWalking();
         yield return new WaitForSeconds(idleTime);
 
@@ -147,7 +153,7 @@ public class HunterController : MonoBehaviour
             transform.position += direction * walkSpeed * Time.deltaTime;
 
             if ((direction.x > 0 && !facingRight) || (direction.x < 0 && facingRight))
-                Flip(); // Voltea hacia el jugador si es necesario
+                Flip();
 
             yield return null;
         }
@@ -190,11 +196,28 @@ public class HunterController : MonoBehaviour
         Debug.Log("Cazador voltea de dirección");
     }
 
+    public void StunHunter()
+    {
+        isStunned = true;
+        stunTimer = stunnedTime;
+        Debug.Log("Cazador aturdido.");
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             Debug.Log("Jugador detectado en área de visión del cazador");
+            if (isStunned)
+            {
+                EatBrain();
+            }
         }
+    }
+
+    private void EatBrain()
+    {
+        Debug.Log("Morty ha comido un cerebro.");
+        // Aquí puedes agregar la lógica para sumar el valor del cerebro a la puntuación de Morty.
     }
 }
