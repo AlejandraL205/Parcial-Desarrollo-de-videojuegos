@@ -40,9 +40,14 @@ public class HunterController : MonoBehaviour
                 isStunned = false;
                 Debug.Log("Cazador ya no está aturdido.");
             }
+            // Aquí se puede hacer que el cazador se mueva más lento mientras está aturdido
+            walkSpeed = 0.5f;  // Reducimos la velocidad cuando está aturdido
         }
         else
         {
+            // Restauramos la velocidad normal
+            walkSpeed = 2f;
+
             // Comportamiento normal cuando no está aturdido
             float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
@@ -67,6 +72,7 @@ public class HunterController : MonoBehaviour
             }
         }
     }
+
 
     private IEnumerator WalkAndIdleRoutine()
     {
@@ -218,6 +224,13 @@ public class HunterController : MonoBehaviour
     private void EatBrain()
     {
         Debug.Log("Morty ha comido un cerebro.");
-        // Aquí puedes agregar la lógica para sumar el valor del cerebro a la puntuación de Morty.
+        // Aquí puedes agregar la lógica para sumar el valor del cerebro a la puntuación o vida de Morty.
+        MortyHealth mortyHealth = player.GetComponent<MortyHealth>();
+        if (mortyHealth != null)
+        {
+            mortyHealth.AddLife(brainValue); // Ahora se llama a AddLife
+            Debug.Log("Vida de Morty aumentada.");
+        }
     }
+
 }

@@ -55,4 +55,10 @@ public class MortyHealth : MonoBehaviour
         Debug.Log("Morty ha muerto.");
         SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Recarga la escena en caso de muerte
     }
+    public void AddLife(int amount)
+    {
+        Heal(amount); // Reutilizando el método Heal para agregar vida
+        Debug.Log("Vida de Morty aumentada.");
+    }
+
 }
