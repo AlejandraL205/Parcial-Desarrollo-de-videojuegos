@@ -7,6 +7,7 @@ TagManager:
   - Hunter
   - GasParticles
   - Ground
+  - "Caba\xF1a"
   layers:
   - Default
   - TransparentFX
@@ -17,7 +18,7 @@ TagManager:
   - Hunter
   - GasParticles
   - Ground
-  - 
+  - "Caba\xF1a"
   - 
   - 
   - 
