@@ -11,6 +11,7 @@ public class IntroController : MonoBehaviour
 
     private void Start()
     {
+        return;
         // Asegúrate de que el video player esté desactivado inicialmente
         videoPlayer.gameObject.SetActive(false);
         player.SetActive(false); // Asegúrate de que el jugador esté desactivado al inicio

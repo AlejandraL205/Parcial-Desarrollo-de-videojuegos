@@ -11,7 +11,7 @@ public class MenuPausa : MonoBehaviour
 
     void Start()
     {
-        menuPausa.SetActive(false);
+        //menuPausa.SetActive(false);
     }
 
     public void TogglePausa()
